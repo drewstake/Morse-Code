@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .schemas import TranslationRequest, TranslationResponse
+from .translator import decode_morse, encode_text
+
 app = FastAPI(
     title="Morse Translator API",
     description="FastAPI backend for Morse code encode and decode operations.",
@@ -19,8 +22,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+@app.post("/decode", response_model=TranslationResponse)
+def decode(request: TranslationRequest) -> TranslationResponse:
+    return decode_morse(request.input)
 
 
-@app.get("/")
-def read_root() -> dict[str, str]:
-    return {"message": "Morse Translator API"}
+@app.post("/encode", response_model=TranslationResponse)
+def encode(request: TranslationRequest) -> TranslationResponse:
+    return encode_text(request.input)
