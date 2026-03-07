@@ -1,0 +1,15 @@
+.DS_Store
+.idea/
+.pytest_cache/
+.venv/
+__pycache__/
+*.pyc
+
+backend/.venv/
+backend/.pytest_cache/
+
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+firebase-debug.log
