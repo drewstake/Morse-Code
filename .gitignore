@@ -13,3 +13,4 @@ frontend/dist/
 frontend/.vite/
 
 firebase-debug.log
+.firebase/
