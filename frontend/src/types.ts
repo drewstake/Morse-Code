@@ -16,3 +16,11 @@ export interface TranslationResult {
   output: string
   warnings: TranslationWarning[]
 }
+
+export interface HistoryItem {
+  id: string
+  mode: TranslationMode
+  input: string
+  output: string
+  timestamp: string
+}
