@@ -146,7 +146,7 @@ function App() {
                 </label>
                 <span className="hint-text">
                   {isDecodeMode
-                    ? 'One or two spaces separate letters. Three spaces or newlines separate words.'
+                    ? 'Single spaces separate letters. Triple spaces or line breaks separate words. Other spacing is flagged.'
                     : 'Whitespace becomes word breaks. Unsupported characters are surfaced clearly.'}
                 </span>
               </div>
@@ -225,7 +225,8 @@ function App() {
               <h3>Spacing Rules</h3>
               <p>
                 <code>.... . .-.. .-.. ---</code> becomes <code>HELLO</code>.
-                Three spaces or line breaks create new words.
+                Triple spaces or line breaks create new words. Other spacing is
+                treated as malformed input.
               </p>
             </article>
             <article>

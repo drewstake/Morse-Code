@@ -10,6 +10,7 @@ class TranslationRequest(BaseModel):
 class TranslationWarning(BaseModel):
     code: Literal[
         "EMPTY_INPUT",
+        "INVALID_MORSE_SPACING",
         "INVALID_MORSE_CHARACTERS",
         "UNKNOWN_MORSE_TOKENS",
         "UNSUPPORTED_TEXT_CHARACTERS",

@@ -19,11 +19,19 @@ def test_decode_examples(raw_input: str, expected_output: str) -> None:
     assert result.warnings == []
 
 
-def test_decode_treats_double_spaces_as_letter_breaks_and_newlines_as_words() -> None:
-    result = decode_morse("....  . -.--\n.--- ..- -.. .")
+def test_decode_treats_newlines_as_word_breaks() -> None:
+    result = decode_morse(".... . -.--\n.--- ..- -.. .")
 
     assert result.output == "HEY JUDE"
     assert result.warnings == []
+
+
+def test_decode_flags_invalid_spacing() -> None:
+    result = decode_morse("....  .")
+
+    assert result.output == "?"
+    assert [warning.code for warning in result.warnings] == ["INVALID_MORSE_SPACING"]
+    assert result.warnings[0].items == ["....  ."]
 
 
 def test_decode_unknown_and_invalid_tokens_decode_as_question_marks() -> None:
@@ -68,8 +76,8 @@ def test_encode_collapses_whitespace_into_word_breaks() -> None:
 
 
 def test_encode_unsupported_characters_warn_and_use_question_marks() -> None:
-    result = encode_text("HI 😊")
+    result = encode_text("HI %")
 
     assert result.output == ".... ..   ?"
     assert result.warnings[0].code == "UNSUPPORTED_TEXT_CHARACTERS"
-    assert result.warnings[0].items == ["😊"]
+    assert result.warnings[0].items == ["%"]

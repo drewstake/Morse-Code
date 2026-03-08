@@ -29,6 +29,53 @@ def _normalize_newlines(value: str) -> str:
     return value.replace("\r\n", "\n").replace("\r", "\n")
 
 
+def _split_decode_words(value: str) -> list[list[str]]:
+    words: list[list[str]] = []
+    current_word: list[str] = []
+    current_token = ""
+    index = 0
+
+    def push_token() -> None:
+        nonlocal current_token
+        if not current_token:
+            return
+
+        current_word.append(current_token)
+        current_token = ""
+
+    def push_word() -> None:
+        nonlocal current_word
+        push_token()
+        if not current_word:
+            return
+
+        words.append(current_word)
+        current_word = []
+
+    while index < len(value):
+        if value[index] != " ":
+            current_token += value[index]
+            index += 1
+            continue
+
+        run_end = index
+        while run_end < len(value) and value[run_end] == " ":
+            run_end += 1
+
+        run_length = run_end - index
+        if run_length == 1:
+            push_token()
+        elif run_length == 3:
+            push_word()
+        else:
+            current_token += " " * run_length
+
+        index = run_end
+
+    push_word()
+    return words
+
+
 @lru_cache(maxsize=1)
 def load_morse_map() -> dict[str, str]:
     mapping_path = Path(__file__).resolve().parents[2] / "shared" / "morse-map.json"
@@ -51,15 +98,21 @@ def decode_morse(raw_input: str) -> TranslationResponse:
         )
 
     reverse_map = load_reverse_morse_map()
+    invalid_spacing_tokens: list[str] = []
     invalid_tokens: list[str] = []
     unknown_tokens: list[str] = []
     expanded_input = re.sub(r" *\n+ *", "   ", normalized_input)
-    words = [chunk for chunk in re.split(r" {3,}", expanded_input) if chunk]
+    words = _split_decode_words(expanded_input)
     decoded_words: list[str] = []
 
     for word in words:
         decoded_letters: list[str] = []
-        for token in [part for part in re.split(r" {1,2}", word) if part]:
+        for token in word:
+            if " " in token:
+                invalid_spacing_tokens.append(token)
+                decoded_letters.append("?")
+                continue
+
             if not MORSE_TOKEN_PATTERN.fullmatch(token):
                 invalid_tokens.append(token)
                 decoded_letters.append("?")
@@ -76,6 +129,19 @@ def decode_morse(raw_input: str) -> TranslationResponse:
         decoded_words.append("".join(decoded_letters))
 
     warnings: list[TranslationWarning] = []
+
+    if invalid_spacing_tokens:
+        count = len(invalid_spacing_tokens)
+        warnings.append(
+            TranslationWarning(
+                code="INVALID_MORSE_SPACING",
+                message=(
+                    f"Found invalid Morse spacing in {count} "
+                    f"{_pluralize(count, 'section', 'sections')}; affected sections decoded as ?."
+                ),
+                items=_collect_items(invalid_spacing_tokens),
+            )
+        )
 
     if invalid_tokens:
         count = len(set(invalid_tokens))

@@ -29,23 +29,80 @@ function normalizeNewlines(value: string) {
   return value.replace(/\r\n?/g, '\n')
 }
 
+function splitDecodeWords(input: string) {
+  const words: string[][] = []
+  let currentWord: string[] = []
+  let currentToken = ''
+
+  const pushToken = () => {
+    if (!currentToken) {
+      return
+    }
+
+    currentWord.push(currentToken)
+    currentToken = ''
+  }
+
+  const pushWord = () => {
+    pushToken()
+    if (currentWord.length === 0) {
+      return
+    }
+
+    words.push(currentWord)
+    currentWord = []
+  }
+
+  for (let index = 0; index < input.length; ) {
+    const character = input[index]
+    if (character !== ' ') {
+      currentToken += character
+      index += 1
+      continue
+    }
+
+    let runEnd = index
+    while (runEnd < input.length && input[runEnd] === ' ') {
+      runEnd += 1
+    }
+
+    const runLength = runEnd - index
+    if (runLength === 1) {
+      pushToken()
+    } else if (runLength === 3) {
+      pushWord()
+    } else {
+      currentToken += ' '.repeat(runLength)
+    }
+
+    index = runEnd
+  }
+
+  pushWord()
+  return words
+}
+
 export function decodeMorse(input: string): TranslationResult {
   const normalizedInput = normalizeNewlines(input).trim()
   if (!normalizedInput) {
     return { output: '', warnings: [emptyWarning('decode')] }
   }
 
+  const invalidSpacingTokens: string[] = []
   const invalidTokens: string[] = []
   const unknownTokens: string[] = []
   const expandedInput = normalizedInput.replace(/ *\n+ */g, '   ')
-  const words = expandedInput.split(/ {3,}/).filter(Boolean)
+  const words = splitDecodeWords(expandedInput)
 
   const output = words
     .map((word) =>
       word
-        .split(/ {1,2}/)
-        .filter(Boolean)
         .map((token) => {
+          if (token.includes(' ')) {
+            invalidSpacingTokens.push(token)
+            return '?'
+          }
+
           if (!morseTokenPattern.test(token)) {
             invalidTokens.push(token)
             return '?'
@@ -64,6 +121,15 @@ export function decodeMorse(input: string): TranslationResult {
     .join(' ')
 
   const warnings: TranslationWarning[] = []
+
+  if (invalidSpacingTokens.length > 0) {
+    const count = invalidSpacingTokens.length
+    warnings.push({
+      code: 'INVALID_MORSE_SPACING',
+      message: `Found invalid Morse spacing in ${count} ${pluralize(count, 'section', 'sections')}; affected sections decoded as ?.`,
+      items: collectItems(invalidSpacingTokens),
+    })
+  }
 
   if (invalidTokens.length > 0) {
     const count = new Set(invalidTokens).size

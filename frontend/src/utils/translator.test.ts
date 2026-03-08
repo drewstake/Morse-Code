@@ -10,8 +10,20 @@ describe('decodeMorse', () => {
     expect(decodeMorse('.... . -.--   .--- ..- -.. .').output).toBe('HEY JUDE')
   })
 
-  it('treats double spaces as letter breaks and newlines as word breaks', () => {
-    expect(decodeMorse('....  . -.--\n.--- ..- -.. .').output).toBe('HEY JUDE')
+  it('treats newlines as word breaks', () => {
+    expect(decodeMorse('.... . -.--\n.--- ..- -.. .').output).toBe('HEY JUDE')
+  })
+
+  it('flags invalid Morse spacing instead of accepting double spaces', () => {
+    const result = decodeMorse('....  .')
+
+    expect(result.output).toBe('?')
+    expect(result.warnings).toEqual([
+      expect.objectContaining({
+        code: 'INVALID_MORSE_SPACING',
+        items: ['....  .'],
+      }),
+    ])
   })
 
   it('flags unknown and invalid morse tokens separately', () => {
@@ -33,10 +45,10 @@ describe('encodeText', () => {
   })
 
   it('uses question marks for unsupported characters', () => {
-    const result = encodeText('HI 😊')
+    const result = encodeText('HI %')
 
     expect(result.output).toBe('.... ..   ?')
     expect(result.warnings[0].code).toBe('UNSUPPORTED_TEXT_CHARACTERS')
-    expect(result.warnings[0].items).toEqual(['😊'])
+    expect(result.warnings[0].items).toEqual(['%'])
   })
 })
