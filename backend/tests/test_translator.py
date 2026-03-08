@@ -53,6 +53,16 @@ def test_decode_empty_input_returns_helpful_warning() -> None:
     assert result.warnings[0].code == "EMPTY_INPUT"
 
 
+def test_decode_warning_counts_track_repeated_occurrences() -> None:
+    result = decode_morse("..x ..x")
+
+    assert (
+        result.warnings[0].message
+        == "Found invalid Morse characters in 2 tokens; affected tokens decoded as ?."
+    )
+    assert result.warnings[0].items == ["..x"]
+
+
 @pytest.mark.parametrize(
     ("raw_input", "expected_output"),
     [
@@ -80,4 +90,11 @@ def test_encode_unsupported_characters_warn_and_use_question_marks() -> None:
 
     assert result.output == ".... ..   ?"
     assert result.warnings[0].code == "UNSUPPORTED_TEXT_CHARACTERS"
+    assert result.warnings[0].items == ["%"]
+
+
+def test_encode_warning_counts_track_repeated_occurrences() -> None:
+    result = encode_text("%%")
+
+    assert result.warnings[0].message == "Encoded 2 unsupported characters as ?."
     assert result.warnings[0].items == ["%"]

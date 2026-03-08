@@ -35,6 +35,13 @@ describe('decodeMorse', () => {
       'UNKNOWN_MORSE_TOKENS',
     ])
   })
+
+  it('counts repeated invalid tokens by occurrence', () => {
+    const result = decodeMorse('..x ..x')
+
+    expect(result.warnings[0].message).toContain('2 tokens')
+    expect(result.warnings[0].items).toEqual(['..x'])
+  })
 })
 
 describe('encodeText', () => {
@@ -49,6 +56,13 @@ describe('encodeText', () => {
 
     expect(result.output).toBe('.... ..   ?')
     expect(result.warnings[0].code).toBe('UNSUPPORTED_TEXT_CHARACTERS')
+    expect(result.warnings[0].items).toEqual(['%'])
+  })
+
+  it('counts repeated unsupported characters by occurrence', () => {
+    const result = encodeText('%%')
+
+    expect(result.warnings[0].message).toContain('2 unsupported characters')
     expect(result.warnings[0].items).toEqual(['%'])
   })
 })

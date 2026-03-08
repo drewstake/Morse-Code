@@ -144,7 +144,7 @@ def decode_morse(raw_input: str) -> TranslationResponse:
         )
 
     if invalid_tokens:
-        count = len(set(invalid_tokens))
+        count = len(invalid_tokens)
         warnings.append(
             TranslationWarning(
                 code="INVALID_MORSE_CHARACTERS",
@@ -157,7 +157,7 @@ def decode_morse(raw_input: str) -> TranslationResponse:
         )
 
     if unknown_tokens:
-        count = len(set(unknown_tokens))
+        count = len(unknown_tokens)
         warnings.append(
             TranslationWarning(
                 code="UNKNOWN_MORSE_TOKENS",
@@ -207,7 +207,7 @@ def encode_text(raw_input: str) -> TranslationResponse:
     warnings: list[TranslationWarning] = []
 
     if unsupported_characters:
-        count = len(set(unsupported_characters))
+        count = len(unsupported_characters)
         warnings.append(
             TranslationWarning(
                 code="UNSUPPORTED_TEXT_CHARACTERS",

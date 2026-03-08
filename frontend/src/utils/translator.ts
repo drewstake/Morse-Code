@@ -132,7 +132,7 @@ export function decodeMorse(input: string): TranslationResult {
   }
 
   if (invalidTokens.length > 0) {
-    const count = new Set(invalidTokens).size
+    const count = invalidTokens.length
     warnings.push({
       code: 'INVALID_MORSE_CHARACTERS',
       message: `Found invalid Morse characters in ${count} ${pluralize(count, 'token', 'tokens')}; affected tokens decoded as ?.`,
@@ -141,7 +141,7 @@ export function decodeMorse(input: string): TranslationResult {
   }
 
   if (unknownTokens.length > 0) {
-    const count = new Set(unknownTokens).size
+    const count = unknownTokens.length
     warnings.push({
       code: 'UNKNOWN_MORSE_TOKENS',
       message: `Decoded ${count} unknown Morse ${pluralize(count, 'token', 'tokens')} as ?.`,
@@ -180,7 +180,7 @@ export function encodeText(input: string): TranslationResult {
   const warnings: TranslationWarning[] = []
 
   if (unsupportedCharacters.length > 0) {
-    const count = new Set(unsupportedCharacters).size
+    const count = unsupportedCharacters.length
     warnings.push({
       code: 'UNSUPPORTED_TEXT_CHARACTERS',
       message: `Encoded ${count} unsupported ${pluralize(count, 'character', 'characters')} as ?.`,
