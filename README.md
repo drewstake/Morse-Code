@@ -235,7 +235,7 @@ When the user is in decode mode, this is the step-by-step flow:
 3. I trim leading and trailing whitespace.
 4. I convert newline groups into word breaks by replacing them with three spaces.
 5. I split words on three or more spaces.
-6. I split letters inside each word on one or two spaces.
+6. I split letters inside each word on single spaces only.
 7. I validate each Morse token.
 8. I decode each valid token through the reverse Morse lookup table.
 9. I turn invalid or unknown tokens into `?`.
@@ -290,7 +290,7 @@ textarea input
   -> normalize newlines + trim
   -> newline groups => word breaks
   -> split on 3+ spaces for words
-  -> split on 1-2 spaces for letters
+  -> split on single spaces for letters
   -> validate Morse tokens
   -> reverse map lookup
   -> output text + warnings
@@ -318,7 +318,7 @@ I wrote the parsing rules to be explicit and predictable.
 
 - I trim leading and trailing whitespace before parsing.
 - A single space separates Morse letters.
-- Two spaces also separate Morse letters.
+- Any spacing other than one space between letters or three spaces between words is treated as malformed and decoded as `?` with a warning.
 - Three spaces separate Morse words.
 - Three or more spaces are treated as word separators.
 - Newlines are treated as word breaks.
@@ -922,7 +922,7 @@ The frontend tests are utility-level tests, not rendered component tests. I made
 ### Why these cases matter
 
 - The sample cases prove the app handles the basic assignment examples.
-- The spacing tests prove that one space, two spaces, three spaces, and newlines behave the way I documented.
+- The spacing tests prove that one space, three spaces, and newlines behave correctly and that malformed spacing is surfaced clearly.
 - The warning tests prove I am not silently dropping bad input.
 - The API tests prove the FastAPI wiring returns the same behavior as the pure translator functions.
 
@@ -941,7 +941,7 @@ I explicitly handled these edge cases:
 
 - blank input
 - leading and trailing whitespace
-- one space vs two spaces between Morse letters
+- malformed spacing between Morse letters
 - three or more spaces between Morse words
 - Windows newlines and Unix newlines
 - multiple newlines between words
@@ -987,7 +987,84 @@ I kept the main data structures plain: objects, arrays, and small typed models. 
 
 I used a button-driven translation flow instead of translating on every keystroke. That keeps the UX stable, avoids noisy intermediate history updates, and makes the output/warning state transitions easier to follow.
 
-## 16. Local Development
+## 16. Things I Had Issues With and How I Solved Them
+
+While building the project, a few parts were more subtle than they looked at first. These were the main problems I ran into and the way I solved them.
+
+### 1. Exact Morse spacing rules
+
+Issue:
+
+- The assignment makes spacing part of the parsing contract, not just formatting.
+- A single space separates letters.
+- Three spaces separate words.
+- Newlines act like word breaks.
+- That means the decoder cannot just "split on whitespace" and call it done.
+
+Solution:
+
+- I normalize newlines first so Windows and Unix line endings behave the same way.
+- I convert newline groups into word breaks.
+- I parse runs of spaces explicitly instead of accepting any whitespace pattern.
+- I only accept a single space between letters and three spaces between words.
+- If spacing is malformed, I surface a warning and decode the affected section as `?` instead of silently accepting bad input.
+
+### 2. Keeping frontend and backend behavior aligned
+
+Issue:
+
+- I implemented the translator in both TypeScript and Python.
+- That made it easy to end up with small differences in spacing behavior, warning messages, or fallback rules if I changed one side and forgot the other.
+
+Solution:
+
+- I used one shared `shared/morse-map.json` file for the Morse mapping.
+- I kept both translation implementations intentionally small and structured similarly.
+- I added frontend utility tests and backend tests for the same important cases so drift would show up quickly.
+- I covered the main sample inputs, newline handling, malformed input, unknown tokens, and unsupported characters in tests on both sides.
+
+### 3. Firebase Hosting versus a Python backend
+
+Issue:
+
+- Firebase Hosting is best suited to serving static frontend files.
+- My backend is a FastAPI app, so it does not deploy to Firebase Hosting in the same simple way a static site does.
+- I still wanted the live demo to work completely end to end.
+
+Solution:
+
+- I put real translation logic in the frontend so the deployed app works entirely from the browser.
+- I kept the FastAPI backend in the repo as a local/API version that mirrors the same translation rules.
+- This let me satisfy the "working Firebase deployment" part of the assignment without making the hosted version depend on a separate server runtime.
+
+### 4. Handling bad input without making the app frustrating
+
+Issue:
+
+- A translator becomes less useful if one bad token causes the whole result to fail.
+- At the same time, silently ignoring invalid input makes debugging harder for the user.
+
+Solution:
+
+- I used structured warnings instead of hard failures.
+- Invalid Morse tokens, malformed spacing, unknown Morse sequences, and unsupported text characters are all surfaced clearly.
+- The app still returns partial output where it can, which makes the behavior easier to understand and more practical to use.
+
+### 5. Preserving recent history without adding unnecessary complexity
+
+Issue:
+
+- I wanted the app to remember recent translations, but adding a database or authentication would have been too heavy for the scope of this assignment.
+- Browser storage can also be missing, empty, or malformed.
+
+Solution:
+
+- I used `localStorage` for a small recent-history feature.
+- I validate the stored data shape before using it.
+- If stored data is missing or invalid, I safely fall back to an empty history list.
+- I also cap the history length and dedupe repeated entries so the sidebar stays useful.
+
+## 17. Local Development
 
 I kept local setup simple. There are no environment variables and no secrets required.
 
@@ -1066,7 +1143,7 @@ I assume:
 - `pip` is available
 - Firebase CLI is installed only if I want to deploy
 
-## 17. Deployment
+## 18. Deployment
 
 I configured deployment only for the frontend.
 
@@ -1127,7 +1204,7 @@ In the live Firebase deployment:
 - history still works through `localStorage`
 - the Python backend is not running
 
-## 18. Security / Safety Notes
+## 19. Security / Safety Notes
 
 This project is small, but I still kept the safety model simple and predictable.
 
@@ -1141,7 +1218,7 @@ This project is small, but I still kept the safety model simple and predictable.
 - I do not execute user input in any way.
 - I handle bad input through warnings and fallback markers instead of risky parsing shortcuts.
 
-## 19. Future Improvements
+## 20. Future Improvements
 
 If I kept working on this project, these are the next improvements I would make:
 
@@ -1153,7 +1230,7 @@ If I kept working on this project, these are the next improvements I would make:
 - add more test coverage around the history helpers
 - make the live app able to switch between local translation and API translation
 
-## 20. Submission Summary
+## 21. Submission Summary
 
 I built a Morse translator that supports both decode and encode flows, shows structured validation warnings, saves recent history locally, includes a tested FastAPI API version, and deploys cleanly as a static frontend on Firebase Hosting.
 
