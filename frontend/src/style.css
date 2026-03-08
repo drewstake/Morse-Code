@@ -77,6 +77,32 @@ h1 {
   font-size: 1.05rem;
 }
 
+.mode-switch {
+  display: inline-flex;
+  gap: 0.35rem;
+  padding: 0.35rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(24, 53, 79, 0.1);
+  border-radius: 999px;
+  background: rgba(245, 248, 252, 0.96);
+}
+
+.mode-button {
+  padding: 0.75rem 1.1rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #5c7892;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.mode-button.is-active {
+  background: #18354f;
+  color: #f8fbff;
+  box-shadow: 0 10px 24px rgba(24, 53, 79, 0.18);
+}
+
 .translator-grid {
   display: grid;
   gap: 1.5rem;
@@ -205,6 +231,14 @@ h1 {
   background: #f4f8fc;
 }
 
+.status-panel.has-warning {
+  background: rgba(251, 238, 228, 0.8);
+}
+
+.status-panel.is-clean {
+  background: rgba(234, 244, 239, 0.9);
+}
+
 .status-panel h3 {
   margin: 0 0 0.75rem;
   color: #163754;
@@ -269,6 +303,12 @@ h1 {
 .rules-strip p {
   color: #46627a;
   font-size: 0.95rem;
+}
+
+.rules-strip code {
+  padding: 0.05rem 0.3rem;
+  border-radius: 6px;
+  background: rgba(23, 50, 77, 0.08);
 }
 
 @media (max-width: 900px) {
