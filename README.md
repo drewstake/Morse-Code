@@ -2,6 +2,15 @@
 
 This is my Morse code translator take-home project for Innovative Owl. I built it as a small full-stack app with a React + Vite + TypeScript frontend and a FastAPI backend. The live Firebase deployment runs entirely from the frontend, and the Python backend is included as a local API version so I could show the same behavior, typed request/response models, and backend tests.
 
+## Live Demo
+
+I deployed the frontend here:
+
+- Primary URL: [https://morse-code-34b27.web.app](https://morse-code-34b27.web.app)
+- Alternate Firebase URL: [https://morse-code-34b27.firebaseapp.com](https://morse-code-34b27.firebaseapp.com)
+
+That live demo is the frontend-only deployment. The FastAPI backend is still the local/API version in this repo.
+
 ## 1. Project Overview
 
 I built this app to solve the take-home assignment in a way that was easy to review and easy to run.
@@ -1060,6 +1069,13 @@ I assume:
 ## 17. Deployment
 
 I configured deployment only for the frontend.
+
+### Live site
+
+The current Firebase Hosting URLs are:
+
+- [https://morse-code-34b27.web.app](https://morse-code-34b27.web.app)
+- [https://morse-code-34b27.firebaseapp.com](https://morse-code-34b27.firebaseapp.com)
 
 ### Firebase Hosting setup
 
