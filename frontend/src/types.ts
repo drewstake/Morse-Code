@@ -1,7 +1,7 @@
-// The two translation directions the UI supports.
+// the app only supports translating in these two directions.
 export type TranslationMode = 'decode' | 'encode'
 
-// Stable warning identifiers used throughout the translator and UI.
+// these codes give the translator and the ui a stable way to talk about warning types.
 export type WarningCode =
   | 'EMPTY_INPUT'
   | 'INVALID_MORSE_SPACING'
@@ -9,20 +9,20 @@ export type WarningCode =
   | 'UNKNOWN_MORSE_TOKENS'
   | 'UNSUPPORTED_TEXT_CHARACTERS'
 
-// A single warning shown to the user after a translation attempt.
+// each warning carries a message plus a few example items to show in the interface.
 export interface TranslationWarning {
   code: WarningCode
   message: string
   items: string[]
 }
 
-// The translator output returned to the UI.
+// translator helpers always return output and warnings together.
 export interface TranslationResult {
   output: string
   warnings: TranslationWarning[]
 }
 
-// One saved translation entry stored in local history.
+// this is the shape of one saved history row in local storage.
 export interface HistoryItem {
   id: string
   mode: TranslationMode

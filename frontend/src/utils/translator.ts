@@ -4,11 +4,12 @@ import type { TranslationMode, TranslationResult, TranslationWarning } from '../
 const morseTokenPattern = /^[.-]+$/
 const maxWarningItems = 5
 
-// Small helpers keep the decode and encode functions focused on the main flow.
+// these tiny helpers keep the main translator functions easier to read.
 function pluralize(count: number, singular: string, plural: string) {
   return count === 1 ? singular : plural
 }
 
+// warnings can mention repeated problems without dumping a huge list into the ui.
 function collectItems(values: string[]) {
   return [...new Set(values)].slice(0, maxWarningItems)
 }
@@ -23,12 +24,13 @@ function emptyWarning(mode: TranslationMode): TranslationWarning {
 }
 
 function normalizeNewlines(value: string) {
+  // this makes pasted windows and unix text behave the same way.
   return value.replace(/\r\n?/g, '\n')
 }
 
-// Morse spacing is part of the grammar:
+// morse spacing is part of the grammar:
 // one space separates letters, three spaces separate words.
-// Any other spacing is preserved inside a token so decodeMorse can flag it later.
+// anything else stays attached to the token so we can report it later.
 function splitDecodeWords(input: string) {
   const words: string[][] = []
   let currentWord: string[] = []
@@ -152,7 +154,7 @@ function buildEncodeWarnings(unsupportedCharacters: string[]) {
   ]
 }
 
-// Each decode token either becomes a valid character or a '?' with a matching warning bucket.
+// each token either decodes cleanly or gets funneled into the warning that explains why it failed.
 function decodeToken(
   token: string,
   invalidSpacingTokens: string[],
@@ -184,9 +186,11 @@ export function decodeMorse(input: string): TranslationResult {
     return { output: '', warnings: [emptyWarning('decode')] }
   }
 
+  // keeping separate buckets lets the ui explain exactly what kind of bad input showed up.
   const invalidSpacingTokens: string[] = []
   const invalidTokens: string[] = []
   const unknownTokens: string[] = []
+  // line breaks are treated the same as word gaps so pasted multiline morse still works.
   const expandedInput = normalizedInput.replace(/ *\n+ */g, '   ')
   const words = splitDecodeWords(expandedInput)
 
@@ -208,6 +212,7 @@ export function encodeText(input: string): TranslationResult {
   }
 
   const unsupportedCharacters: string[] = []
+  // splitting on any whitespace means tabs, extra spaces, and newlines all become clean word breaks.
   const output = normalizedInput
     .split(/\s+/)
     .filter(Boolean)

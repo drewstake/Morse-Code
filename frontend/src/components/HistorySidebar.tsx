@@ -7,7 +7,7 @@ interface HistorySidebarProps {
   onClearHistory: () => void
 }
 
-// This sidebar only renders saved translations. App.tsx owns the actual history state.
+// this component is just the history view; the parent owns the actual data and handlers.
 function HistorySidebar({ history, onSelect, onClearHistory }: HistorySidebarProps) {
   return (
     <aside className="history-card">
@@ -30,6 +30,7 @@ function HistorySidebar({ history, onSelect, onClearHistory }: HistorySidebarPro
         <ul className="history-list">
           {history.map((item) => (
             <li key={item.id}>
+              {/* clicking a saved row reloads that translation back into the main card. */}
               <button className="history-item" type="button" onClick={() => onSelect(item)}>
                 <div className="history-meta">
                   <span className={`mode-pill ${item.mode}`}>{item.mode}</span>
@@ -44,10 +45,13 @@ function HistorySidebar({ history, onSelect, onClearHistory }: HistorySidebarPro
           ))}
         </ul>
       ) : (
-        <div className="history-empty">
-          <p>No saved translations yet.</p>
-          <span>Run a decode or encode action and it will show up here.</span>
-        </div>
+        <>
+          {/* this empty state makes it obvious the feature is available, just not used yet. */}
+          <div className="history-empty">
+            <p>No saved translations yet.</p>
+            <span>Run a decode or encode action and it will show up here.</span>
+          </div>
+        </>
       )}
     </aside>
   )

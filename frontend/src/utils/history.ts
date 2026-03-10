@@ -1,6 +1,8 @@
 import type { HistoryItem } from '../types'
 
+// this key is the single place we store translation history in the browser.
 const storageKey = 'morse-translator-history'
+// keeping history capped stops local storage from growing forever.
 const historyLimit = 12
 
 function isHistoryItem(value: unknown): value is HistoryItem {
@@ -19,6 +21,7 @@ function isHistoryItem(value: unknown): value is HistoryItem {
 }
 
 export function loadHistory(): HistoryItem[] {
+  // this guard keeps the helper safe if it ever runs somewhere without a window object.
   if (typeof window === 'undefined') {
     return []
   }
@@ -36,6 +39,7 @@ export function loadHistory(): HistoryItem[] {
 }
 
 export function saveHistory(items: HistoryItem[]) {
+  // we trim here too so callers do not have to remember the storage limit.
   window.localStorage.setItem(storageKey, JSON.stringify(items.slice(0, historyLimit)))
 }
 
@@ -44,6 +48,7 @@ export function clearHistory() {
 }
 
 export function addHistoryItem(history: HistoryItem[], nextItem: HistoryItem) {
+  // if the same translation is run again, we move it to the top instead of saving a duplicate copy.
   return [
     nextItem,
     ...history.filter(
@@ -58,6 +63,7 @@ export function addHistoryItem(history: HistoryItem[], nextItem: HistoryItem) {
 }
 
 export function formatHistoryTimestamp(timestamp: string) {
+  // using the browser locale makes the saved times feel natural on any machine.
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: 'medium',
     timeStyle: 'short',

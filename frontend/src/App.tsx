@@ -10,12 +10,12 @@ import {
 } from './utils/history'
 import { encodeText, decodeMorse } from './utils/translator'
 
-// This keeps the translation decision in one place so every caller uses the same flow.
+// this keeps the mode check in one place so every translation path behaves the same way.
 function runTranslation(currentMode: TranslationMode, currentInput: string) {
   return currentMode === 'decode' ? decodeMorse(currentInput) : encodeText(currentInput)
 }
 
-// History items need a stable key even though we are not using a backend or database.
+// history rows still need unique ids even though everything lives only in the browser.
 function createHistoryId() {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return crypto.randomUUID()
@@ -25,7 +25,7 @@ function createHistoryId() {
 }
 
 function App() {
-  // These state values drive the live translation experience on the page.
+  // this is the main app state for the current translation session.
   const [mode, setMode] = useState<TranslationMode>('decode')
   const [input, setInput] = useState('')
   const [output, setOutput] = useState('')
@@ -39,7 +39,7 @@ function App() {
     setCopyMessage('')
   }
 
-  // Every translation path uses this helper so output, warnings, and copy state stay in sync.
+  // this helper keeps the visible result and any warning state in sync after each run.
   function applyTranslation(currentMode: TranslationMode, currentInput: string) {
     const result = runTranslation(currentMode, currentInput)
     setOutput(result.output)
@@ -51,6 +51,7 @@ function App() {
   function handleTranslate() {
     const result = applyTranslation(mode, input)
 
+    // empty input can still show a warning, but it should not create a history entry.
     if (!input.trim()) {
       return
     }
@@ -78,6 +79,7 @@ function App() {
     }
 
     try {
+      // clipboard writes can fail in some browsers or permissions states, so both outcomes are handled.
       await navigator.clipboard.writeText(output)
       setCopyMessage('Copied to clipboard.')
     } catch {
@@ -90,11 +92,12 @@ function App() {
       return
     }
 
+    // switching modes clears old results so decode feedback does not bleed into encode mode, or vice versa.
     setMode(nextMode)
     resetTranslationFeedback()
   }
 
-  // We rerun translation from the saved input so history always reflects current translator rules.
+  // rerunning from the saved input is safer than trusting old saved output forever.
   function handleHistorySelect(item: HistoryItem) {
     setMode(item.mode)
     setInput(item.input)

@@ -13,7 +13,7 @@ interface TranslatorCardProps {
   onCopy: () => void | Promise<void>
 }
 
-// This keeps all mode-specific copy in one place so the JSX below stays focused on layout.
+// keeping the wording here makes the render section mostly about structure instead of string juggling.
 const modeContent = {
   decode: {
     actionLabel: 'Decode',
@@ -71,6 +71,7 @@ function TranslatorCard({
         </p>
       </header>
 
+      {/* this is basically a two-tab switch, but simple buttons are enough here. */}
       <div className="mode-switch" role="tablist" aria-label="Translation mode">
         <button
           className={`mode-button ${isDecodeMode ? 'is-active' : ''}`}
@@ -129,6 +130,7 @@ function TranslatorCard({
             {copyMessage ? <span className="copy-message">{copyMessage}</span> : null}
           </div>
 
+          {/* when there is no output yet, the placeholder explains what will show up here. */}
           <div className="output-box" aria-live="polite">
             {output || content.outputPlaceholder}
           </div>
@@ -139,6 +141,8 @@ function TranslatorCard({
           >
             <h3>{warnings.length > 0 ? 'Warnings' : 'Translation Notes'}</h3>
             {warnings.length > 0 ? (
+              <>
+                {/* warnings are grouped so users get one clear message per issue type. */}
               <ul className="warning-list">
                 {warnings.map((warning) => (
                   <li key={warning.code}>
@@ -155,6 +159,7 @@ function TranslatorCard({
                   </li>
                 ))}
               </ul>
+              </>
             ) : output ? (
               <p className="status-ok">Translation completed without warnings.</p>
             ) : (
@@ -166,6 +171,7 @@ function TranslatorCard({
         </section>
       </div>
 
+      {/* this strip makes the app rules visible without forcing someone to read the code first. */}
       <section className="rules-strip">
         <article>
           <h3>Spacing Rules</h3>
