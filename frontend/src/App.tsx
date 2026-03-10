@@ -17,10 +17,6 @@ function runTranslation(currentMode: TranslationMode, currentInput: string) {
 
 // history rows still need unique ids even though everything lives only in the browser.
 function createHistoryId() {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID()
-  }
-
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
