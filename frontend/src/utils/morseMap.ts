@@ -55,4 +55,9 @@ const morseMap = {
   '@': '.--.-.',
 } as const
 
+// Decode mode needs the reverse lookup so Morse tokens can map back to characters.
+export const reverseMorseMap = Object.fromEntries(
+  Object.entries(morseMap).map(([character, morse]) => [morse, character]),
+) as Record<string, string>
+
 export default morseMap

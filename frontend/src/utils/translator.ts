@@ -1,13 +1,10 @@
-import morseMap from './morseMap'
+import morseMap, { reverseMorseMap } from './morseMap'
 import type { TranslationMode, TranslationResult, TranslationWarning } from '../types'
-
-const reverseMorseMap = Object.fromEntries(
-  Object.entries(morseMap).map(([character, morse]) => [morse, character]),
-)
 
 const morseTokenPattern = /^[.-]+$/
 const maxWarningItems = 5
 
+// Small helpers keep the decode and encode functions focused on the main flow.
 function pluralize(count: number, singular: string, plural: string) {
   return count === 1 ? singular : plural
 }
@@ -29,6 +26,9 @@ function normalizeNewlines(value: string) {
   return value.replace(/\r\n?/g, '\n')
 }
 
+// Morse spacing is part of the grammar:
+// one space separates letters, three spaces separate words.
+// Any other spacing is preserved inside a token so decodeMorse can flag it later.
 function splitDecodeWords(input: string) {
   const words: string[][] = []
   let currentWord: string[] = []
@@ -82,6 +82,102 @@ function splitDecodeWords(input: string) {
   return words
 }
 
+function buildWarning(
+  code: TranslationWarning['code'],
+  message: string,
+  items: string[],
+): TranslationWarning {
+  return {
+    code,
+    message,
+    items: collectItems(items),
+  }
+}
+
+function buildDecodeWarnings(
+  invalidSpacingTokens: string[],
+  invalidTokens: string[],
+  unknownTokens: string[],
+) {
+  const warnings: TranslationWarning[] = []
+
+  if (invalidSpacingTokens.length > 0) {
+    const count = invalidSpacingTokens.length
+    warnings.push(
+      buildWarning(
+        'INVALID_MORSE_SPACING',
+        `Found invalid Morse spacing in ${count} ${pluralize(count, 'section', 'sections')}; affected sections decoded as ?.`,
+        invalidSpacingTokens,
+      ),
+    )
+  }
+
+  if (invalidTokens.length > 0) {
+    const count = invalidTokens.length
+    warnings.push(
+      buildWarning(
+        'INVALID_MORSE_CHARACTERS',
+        `Found invalid Morse characters in ${count} ${pluralize(count, 'token', 'tokens')}; affected tokens decoded as ?.`,
+        invalidTokens,
+      ),
+    )
+  }
+
+  if (unknownTokens.length > 0) {
+    const count = unknownTokens.length
+    warnings.push(
+      buildWarning(
+        'UNKNOWN_MORSE_TOKENS',
+        `Decoded ${count} unknown Morse ${pluralize(count, 'token', 'tokens')} as ?.`,
+        unknownTokens,
+      ),
+    )
+  }
+
+  return warnings
+}
+
+function buildEncodeWarnings(unsupportedCharacters: string[]) {
+  if (unsupportedCharacters.length === 0) {
+    return []
+  }
+
+  const count = unsupportedCharacters.length
+  return [
+    buildWarning(
+      'UNSUPPORTED_TEXT_CHARACTERS',
+      `Encoded ${count} unsupported ${pluralize(count, 'character', 'characters')} as ?.`,
+      unsupportedCharacters,
+    ),
+  ]
+}
+
+// Each decode token either becomes a valid character or a '?' with a matching warning bucket.
+function decodeToken(
+  token: string,
+  invalidSpacingTokens: string[],
+  invalidTokens: string[],
+  unknownTokens: string[],
+) {
+  if (token.includes(' ')) {
+    invalidSpacingTokens.push(token)
+    return '?'
+  }
+
+  if (!morseTokenPattern.test(token)) {
+    invalidTokens.push(token)
+    return '?'
+  }
+
+  const decoded = reverseMorseMap[token]
+  if (!decoded) {
+    unknownTokens.push(token)
+    return '?'
+  }
+
+  return decoded
+}
+
 export function decodeMorse(input: string): TranslationResult {
   const normalizedInput = normalizeNewlines(input).trim()
   if (!normalizedInput) {
@@ -97,59 +193,12 @@ export function decodeMorse(input: string): TranslationResult {
   const output = words
     .map((word) =>
       word
-        .map((token) => {
-          if (token.includes(' ')) {
-            invalidSpacingTokens.push(token)
-            return '?'
-          }
-
-          if (!morseTokenPattern.test(token)) {
-            invalidTokens.push(token)
-            return '?'
-          }
-
-          const decoded = reverseMorseMap[token]
-          if (!decoded) {
-            unknownTokens.push(token)
-            return '?'
-          }
-
-          return decoded
-        })
+        .map((token) => decodeToken(token, invalidSpacingTokens, invalidTokens, unknownTokens))
         .join(''),
     )
     .join(' ')
 
-  const warnings: TranslationWarning[] = []
-
-  if (invalidSpacingTokens.length > 0) {
-    const count = invalidSpacingTokens.length
-    warnings.push({
-      code: 'INVALID_MORSE_SPACING',
-      message: `Found invalid Morse spacing in ${count} ${pluralize(count, 'section', 'sections')}; affected sections decoded as ?.`,
-      items: collectItems(invalidSpacingTokens),
-    })
-  }
-
-  if (invalidTokens.length > 0) {
-    const count = invalidTokens.length
-    warnings.push({
-      code: 'INVALID_MORSE_CHARACTERS',
-      message: `Found invalid Morse characters in ${count} ${pluralize(count, 'token', 'tokens')}; affected tokens decoded as ?.`,
-      items: collectItems(invalidTokens),
-    })
-  }
-
-  if (unknownTokens.length > 0) {
-    const count = unknownTokens.length
-    warnings.push({
-      code: 'UNKNOWN_MORSE_TOKENS',
-      message: `Decoded ${count} unknown Morse ${pluralize(count, 'token', 'tokens')} as ?.`,
-      items: collectItems(unknownTokens),
-    })
-  }
-
-  return { output, warnings }
+  return { output, warnings: buildDecodeWarnings(invalidSpacingTokens, invalidTokens, unknownTokens) }
 }
 
 export function encodeText(input: string): TranslationResult {
@@ -177,16 +226,5 @@ export function encodeText(input: string): TranslationResult {
     )
     .join('   ')
 
-  const warnings: TranslationWarning[] = []
-
-  if (unsupportedCharacters.length > 0) {
-    const count = unsupportedCharacters.length
-    warnings.push({
-      code: 'UNSUPPORTED_TEXT_CHARACTERS',
-      message: `Encoded ${count} unsupported ${pluralize(count, 'character', 'characters')} as ?.`,
-      items: collectItems(unsupportedCharacters),
-    })
-  }
-
-  return { output, warnings }
+  return { output, warnings: buildEncodeWarnings(unsupportedCharacters) }
 }
