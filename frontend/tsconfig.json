@@ -7,7 +7,6 @@
     "types": ["vite/client", "vitest/globals"],
     "skipLibCheck": true,
     "jsx": "react-jsx",
-    "resolveJsonModule": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",

@@ -36,14 +36,13 @@ Morse Translator is a React + Vite + TypeScript app that converts Morse code to 
 |   |   |-- types.ts
 |   |   `-- utils/
 |   |       |-- history.ts
+|   |       |-- morseMap.ts
 |   |       |-- translator.ts
 |   |       `-- translator.test.ts
 |   |-- index.html
 |   |-- package.json
 |   |-- tsconfig.json
 |   `-- vite.config.ts
-|-- shared/
-|   `-- morse-map.json
 |-- .firebaserc
 |-- firebase.json
 `-- README.md
@@ -52,7 +51,7 @@ Morse Translator is a React + Vite + TypeScript app that converts Morse code to 
 ## How It Works
 
 - The UI lets the user switch between decode and encode modes.
-- Translation runs in the frontend using the shared Morse map in `shared/morse-map.json`.
+- Translation runs in the frontend using the local Morse map in `frontend/src/utils/morseMap.ts`.
 - Warnings are shown alongside the output instead of failing the whole translation.
 - Recent translations are stored in `localStorage` so they survive refreshes.
 

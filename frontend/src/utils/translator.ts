@@ -1,4 +1,4 @@
-import morseMap from '../../../shared/morse-map.json'
+import morseMap from './morseMap'
 import type { TranslationMode, TranslationResult, TranslationWarning } from '../types'
 
 const reverseMorseMap = Object.fromEntries(
