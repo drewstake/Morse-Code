@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { HistoryItem, TranslationMode, TranslationWarning } from './types'
 import HistorySidebar from './components/HistorySidebar'
 import TranslatorCard from './components/TranslatorCard'
@@ -50,7 +50,7 @@ function App() {
     return result
   }
 
-  function handleTranslate() {
+  const handleTranslate = useCallback(() => {
     const result = translateInput(mode, input)
 
     if (input.trim() === '') {
@@ -65,18 +65,19 @@ function App() {
       timestamp: new Date().toISOString(),
     }
 
-    const nextHistory = addHistoryItem(history, nextItem)
+    setHistory((currentHistory) => {
+      const nextHistory = addHistoryItem(currentHistory, nextItem)
+      saveHistory(nextHistory)
+      return nextHistory
+    })
+  }, [input, mode])
 
-    setHistory(nextHistory)
-    saveHistory(nextHistory)
-  }
-
-  function handleClear() {
+  const handleClear = useCallback(() => {
     setInput('')
     clearTranslationResult()
-  }
+  }, [])
 
-  async function handleCopy() {
+  const handleCopy = useCallback(async () => {
     if (output === '') {
       return
     }
@@ -87,27 +88,27 @@ function App() {
     } catch {
       setCopyMessage('Clipboard copy is unavailable in this browser.')
     }
-  }
+  }, [output])
 
-  function handleModeChange(nextMode: TranslationMode) {
+  const handleModeChange = useCallback((nextMode: TranslationMode) => {
     if (nextMode === mode) {
       return
     }
 
     setMode(nextMode)
     clearTranslationResult()
-  }
+  }, [mode])
 
-  function handleHistorySelect(item: HistoryItem) {
+  const handleHistorySelect = useCallback((item: HistoryItem) => {
     setMode(item.mode)
     setInput(item.input)
     translateInput(item.mode, item.input)
-  }
+  }, [])
 
-  function handleClearHistory() {
+  const handleClearHistory = useCallback(() => {
     clearHistory()
     setHistory([])
-  }
+  }, [])
 
   return (
     <main className="page">

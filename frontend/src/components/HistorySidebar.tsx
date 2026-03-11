@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { HistoryItem } from '../types'
 import { formatHistoryTimestamp } from '../utils/history'
 
@@ -57,4 +58,4 @@ function HistorySidebar({ history, onSelect, onClearHistory }: HistorySidebarPro
   )
 }
 
-export default HistorySidebar
+export default memo(HistorySidebar)

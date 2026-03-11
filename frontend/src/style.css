@@ -7,7 +7,6 @@
   font-synthesis: none;
   line-height: 1.5;
   font-weight: 400;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -48,10 +47,8 @@ input {
   padding: 3rem;
   border: 1px solid rgba(23, 50, 77, 0.1);
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.75);
-  box-shadow: 0 24px 80px rgba(29, 55, 90, 0.14);
-  backdrop-filter: blur(10px);
-  animation: rise 420ms ease-out;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 32px rgba(29, 55, 90, 0.08);
 }
 
 .hero {
@@ -105,7 +102,7 @@ h1 {
 .mode-button.is-active {
   background: #18354f;
   color: #f8fbff;
-  box-shadow: 0 10px 24px rgba(24, 53, 79, 0.18);
+  box-shadow: 0 6px 18px rgba(24, 53, 79, 0.14);
 }
 
 .translator-grid {
@@ -173,7 +170,7 @@ h1 {
   border-radius: 999px;
   cursor: pointer;
   transition:
-    transform 140ms ease,
+    background-color 140ms ease,
     box-shadow 140ms ease,
     border-color 140ms ease;
 }
@@ -181,7 +178,7 @@ h1 {
 .primary-button {
   background: #18354f;
   color: #f6f8fb;
-  box-shadow: 0 16px 32px rgba(24, 53, 79, 0.2);
+  box-shadow: 0 8px 18px rgba(24, 53, 79, 0.14);
 }
 
 .secondary-button {
@@ -198,7 +195,7 @@ h1 {
 .primary-button:hover,
 .secondary-button:hover,
 .ghost-button:hover {
-  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(24, 53, 79, 0.1);
 }
 
 .primary-button:disabled,
@@ -322,9 +319,10 @@ h1 {
   padding: 1.5rem;
   border: 1px solid rgba(23, 50, 77, 0.1);
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 20px 60px rgba(29, 55, 90, 0.12);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 24px rgba(29, 55, 90, 0.08);
+  content-visibility: auto;
+  contain-intrinsic-size: 480px;
 }
 
 .history-header {
@@ -376,7 +374,7 @@ h1 {
 
 .history-item:hover {
   border-color: rgba(31, 71, 108, 0.22);
-  box-shadow: 0 14px 28px rgba(29, 55, 90, 0.08);
+  box-shadow: 0 8px 16px rgba(29, 55, 90, 0.06);
 }
 
 .history-meta {
@@ -494,14 +492,11 @@ h1 {
   }
 }
 
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto;
+    transition-duration: 0ms !important;
   }
 }
