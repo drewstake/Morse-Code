@@ -10,6 +10,7 @@ const morseTokenPattern = /^[.-]+$/
 const maxWarningItems = 5
 
 function pluralize(count: number, singular: string, plural: string) {
+  // Use the singular word when the count is 1.
   if (count === 1) {
     return singular
   }
@@ -17,6 +18,7 @@ function pluralize(count: number, singular: string, plural: string) {
   return plural
 }
 
+// Turn Windows-style line endings into \n so the rest of the code only handles one format.
 function normalizeNewlines(value: string) {
   return value.replace(/\r\n?/g, '\n')
 }
@@ -31,16 +33,19 @@ function getDecodedCharacter(token: string) {
   return map[token]
 }
 
+// Warning lists stay short so the UI does not get cluttered.
 function getWarningItems(values: string[]) {
   const items: string[] = []
 
   for (const value of values) {
+    // Skip repeats so the warning list stays cleaner.
     if (items.includes(value)) {
       continue
     }
 
     items.push(value)
 
+    // Stop once the warning list reaches the limit.
     if (items.length >= maxWarningItems) {
       break
     }
@@ -61,7 +66,9 @@ function createWarning(
   }
 }
 
+// This is the message shown when the user submits an empty input box.
 function emptyWarning(mode: TranslationMode): TranslationWarning {
+  // Decode mode and encode mode use different empty-input messages.
   if (mode === 'decode') {
     return {
       code: 'EMPTY_INPUT',
@@ -84,6 +91,7 @@ function buildDecodeWarnings(
 ) {
   const warnings: TranslationWarning[] = []
 
+  // Add a warning if spacing rules were broken.
   if (invalidSpacingTokens.length > 0) {
     const count = invalidSpacingTokens.length
     const message =
@@ -95,6 +103,7 @@ function buildDecodeWarnings(
     )
   }
 
+  // Add a warning for tokens with characters other than dots and dashes.
   if (invalidTokens.length > 0) {
     const count = invalidTokens.length
     const message =
@@ -106,6 +115,7 @@ function buildDecodeWarnings(
     )
   }
 
+  // Add a warning for valid-looking Morse that is not in the map.
   if (unknownTokens.length > 0) {
     const count = unknownTokens.length
     const message =
@@ -121,6 +131,7 @@ function buildDecodeWarnings(
 }
 
 function buildEncodeWarnings(unsupportedCharacters: string[]) {
+  // If every character was supported, there is nothing to warn about.
   if (unsupportedCharacters.length === 0) {
     return []
   }
@@ -135,6 +146,10 @@ function buildEncodeWarnings(unsupportedCharacters: string[]) {
   ]
 }
 
+// Morse input uses spacing rules:
+// 1 space = next letter
+// 3 spaces = next word
+// anything else is left inside the token so it can be flagged as invalid later
 function splitDecodeWords(input: string) {
   const words: string[][] = []
   let currentWord: string[] = []
@@ -144,6 +159,7 @@ function splitDecodeWords(input: string) {
   while (index < input.length) {
     const character = input[index]
 
+    // Dots and dashes stay in the current Morse token.
     if (character !== ' ') {
       currentToken += character
       index += 1
@@ -157,6 +173,7 @@ function splitDecodeWords(input: string) {
       index += 1
     }
 
+    // One space means the current letter is finished.
     if (spaceCount === 1) {
       if (currentToken !== '') {
         currentWord.push(currentToken)
@@ -166,12 +183,14 @@ function splitDecodeWords(input: string) {
       continue
     }
 
+    // Three spaces means the current word is finished.
     if (spaceCount === 3) {
       if (currentToken !== '') {
         currentWord.push(currentToken)
         currentToken = ''
       }
 
+      // Only save the word if it actually has letters in it.
       if (currentWord.length > 0) {
         words.push(currentWord)
         currentWord = []
@@ -200,11 +219,13 @@ function decodeToken(
   invalidTokens: string[],
   unknownTokens: string[],
 ) {
+  // If a token still contains spaces here, the spacing was not valid.
   if (token.includes(' ')) {
     invalidSpacingTokens.push(token)
     return '?'
   }
 
+  // Morse tokens should only contain dots and dashes.
   if (!morseTokenPattern.test(token)) {
     invalidTokens.push(token)
     return '?'
@@ -212,6 +233,7 @@ function decodeToken(
 
   const decodedCharacter = getDecodedCharacter(token)
 
+  // A well-formed token can still be unknown if it is not in the Morse map.
   if (!decodedCharacter) {
     unknownTokens.push(token)
     return '?'
@@ -221,8 +243,10 @@ function decodeToken(
 }
 
 export function decodeMorse(input: string): TranslationResult {
+  // Clean up the input first so leading/trailing spaces do not cause problems.
   const normalizedInput = normalizeNewlines(input).trim()
 
+  // If the user did not enter anything, return the empty-input warning.
   if (normalizedInput === '') {
     return {
       output: '',
@@ -233,6 +257,7 @@ export function decodeMorse(input: string): TranslationResult {
   const invalidSpacingTokens: string[] = []
   const invalidTokens: string[] = []
   const unknownTokens: string[] = []
+  // New lines count as word breaks, just like three spaces.
   const inputWithWordBreaks = normalizedInput.replace(/ *\n+ */g, '   ')
   const words = splitDecodeWords(inputWithWordBreaks)
   const decodedWords: string[] = []
@@ -265,8 +290,10 @@ export function decodeMorse(input: string): TranslationResult {
 }
 
 export function encodeText(input: string): TranslationResult {
+  // Clean up the input first so extra whitespace does not matter.
   const normalizedInput = normalizeNewlines(input).trim()
 
+  // If the user did not enter anything, return the empty-input warning.
   if (normalizedInput === '') {
     return {
       output: '',
@@ -275,10 +302,12 @@ export function encodeText(input: string): TranslationResult {
   }
 
   const unsupportedCharacters: string[] = []
+  // Any amount of whitespace between words becomes a normal word break when encoding.
   const words = normalizedInput.split(/\s+/)
   const encodedWords: string[] = []
 
   for (const word of words) {
+    // Ignore empty pieces just in case extra whitespace created them.
     if (word === '') {
       continue
     }
@@ -289,6 +318,7 @@ export function encodeText(input: string): TranslationResult {
     for (const character of upperWord) {
       const encodedCharacter = getMorseCode(character)
 
+      // Unsupported characters are kept as ? so the output still shows where they were.
       if (!encodedCharacter) {
         unsupportedCharacters.push(character)
         encodedLetters.push('?')
