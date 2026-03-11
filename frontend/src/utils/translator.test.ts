@@ -1,75 +1,76 @@
 import { decodeMorse, encodeText } from './translator'
 
 describe('decodeMorse', () => {
-  // these are the core examples someone would probably try first in an interview or demo.
   it('decodes the provided sample cases', () => {
-    expect(decodeMorse('.... . .-.. .-.. ---').output).toBe('HELLO')
-    expect(
-      decodeMorse('.... . .-.. .-.. ---   .-- --- .-. .-.. -..').output,
-    ).toBe('HELLO WORLD')
-    expect(decodeMorse('... --- ...').output).toBe('SOS')
-    expect(decodeMorse('.... . -.--   .--- ..- -.. .').output).toBe('HEY JUDE')
+    const helloResult = decodeMorse('.... . .-.. .-.. ---')
+    const helloWorldResult = decodeMorse(
+      '.... . .-.. .-.. ---   .-- --- .-. .-.. -..',
+    )
+    const sosResult = decodeMorse('... --- ...')
+    const heyJudeResult = decodeMorse('.... . -.--   .--- ..- -.. .')
+
+    expect(helloResult.output).toBe('HELLO')
+    expect(helloWorldResult.output).toBe('HELLO WORLD')
+    expect(sosResult.output).toBe('SOS')
+    expect(heyJudeResult.output).toBe('HEY JUDE')
   })
 
   it('treats newlines as word breaks', () => {
-    expect(decodeMorse('.... . -.--\n.--- ..- -.. .').output).toBe('HEY JUDE')
+    const result = decodeMorse('.... . -.--\n.--- ..- -.. .')
+
+    expect(result.output).toBe('HEY JUDE')
   })
 
-  // double spaces are intentionally invalid because the decoder uses one or three spaces as the grammar.
   it('flags invalid Morse spacing instead of accepting double spaces', () => {
     const result = decodeMorse('....  .')
+    const firstWarning = result.warnings[0]
 
     expect(result.output).toBe('?')
-    expect(result.warnings).toEqual([
-      expect.objectContaining({
-        code: 'INVALID_MORSE_SPACING',
-        items: ['....  .'],
-      }),
-    ])
+    expect(firstWarning.code).toBe('INVALID_MORSE_SPACING')
+    expect(firstWarning.items).toEqual(['....  .'])
   })
 
-  // these two bad inputs fail for different reasons, so the warnings should stay split.
   it('flags unknown and invalid morse tokens separately', () => {
     const result = decodeMorse('.... ..-.- ..x')
+    const warningCodes = result.warnings.map((warning) => warning.code)
 
     expect(result.output).toBe('H??')
-    expect(result.warnings.map((warning) => warning.code)).toEqual([
+    expect(warningCodes).toEqual([
       'INVALID_MORSE_CHARACTERS',
       'UNKNOWN_MORSE_TOKENS',
     ])
   })
 
-  // warning messages count repeats, but the items list only shows unique examples.
   it('counts repeated invalid tokens by occurrence', () => {
     const result = decodeMorse('..x ..x')
+    const firstWarning = result.warnings[0]
 
-    expect(result.warnings[0].message).toContain('2 tokens')
-    expect(result.warnings[0].items).toEqual(['..x'])
+    expect(firstWarning.message).toContain('2 tokens')
+    expect(firstWarning.items).toEqual(['..x'])
   })
 })
 
 describe('encodeText', () => {
-  // this mirrors morse convention: letters get one space, words get three.
   it('encodes words with triple spaces between them', () => {
-    expect(encodeText('HELLO WORLD').output).toBe(
-      '.... . .-.. .-.. ---   .-- --- .-. .-.. -..',
-    )
+    const result = encodeText('HELLO WORLD')
+
+    expect(result.output).toBe('.... . .-.. .-.. ---   .-- --- .-. .-.. -..')
   })
 
-  // unsupported characters still preserve the shape of the output by turning into question marks.
   it('uses question marks for unsupported characters', () => {
     const result = encodeText('HI %')
+    const firstWarning = result.warnings[0]
 
     expect(result.output).toBe('.... ..   ?')
-    expect(result.warnings[0].code).toBe('UNSUPPORTED_TEXT_CHARACTERS')
-    expect(result.warnings[0].items).toEqual(['%'])
+    expect(firstWarning.code).toBe('UNSUPPORTED_TEXT_CHARACTERS')
+    expect(firstWarning.items).toEqual(['%'])
   })
 
-  // same idea as decode: repeated failures count toward the message total.
   it('counts repeated unsupported characters by occurrence', () => {
     const result = encodeText('%%')
+    const firstWarning = result.warnings[0]
 
-    expect(result.warnings[0].message).toContain('2 unsupported characters')
-    expect(result.warnings[0].items).toEqual(['%'])
+    expect(firstWarning.message).toContain('2 unsupported characters')
+    expect(firstWarning.items).toEqual(['%'])
   })
 })

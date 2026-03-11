@@ -1,46 +1,92 @@
 import type { HistoryItem } from '../types'
 
-// this key is the single place we store translation history in the browser.
 const storageKey = 'morse-translator-history'
-// keeping history capped stops local storage from growing forever.
 const historyLimit = 12
 
-function isHistoryItem(value: unknown): value is HistoryItem {
-  if (!value || typeof value !== 'object') {
+function isValidMode(value: unknown) {
+  return value === 'decode' || value === 'encode'
+}
+
+function isHistoryItem(value: unknown) {
+  if (typeof value !== 'object' || value === null) {
     return false
   }
 
-  const candidate = value as Partial<HistoryItem>
-  return (
-    typeof candidate.id === 'string' &&
-    (candidate.mode === 'decode' || candidate.mode === 'encode') &&
-    typeof candidate.input === 'string' &&
-    typeof candidate.output === 'string' &&
-    typeof candidate.timestamp === 'string'
-  )
+  const item = value as Record<string, unknown>
+
+  if (typeof item.id !== 'string') {
+    return false
+  }
+
+  if (!isValidMode(item.mode)) {
+    return false
+  }
+
+  if (typeof item.input !== 'string') {
+    return false
+  }
+
+  if (typeof item.output !== 'string') {
+    return false
+  }
+
+  if (typeof item.timestamp !== 'string') {
+    return false
+  }
+
+  return true
 }
 
 export function loadHistory(): HistoryItem[] {
-  // this guard keeps the helper safe if it ever runs somewhere without a window object.
   if (typeof window === 'undefined') {
     return []
   }
 
+  const rawHistory = window.localStorage.getItem(storageKey)
+
+  if (!rawHistory) {
+    return []
+  }
+
   try {
-    const parsed = JSON.parse(window.localStorage.getItem(storageKey) ?? '[]')
-    if (!Array.isArray(parsed)) {
+    const parsedHistory = JSON.parse(rawHistory)
+
+    if (!Array.isArray(parsedHistory)) {
       return []
     }
 
-    return parsed.filter(isHistoryItem).slice(0, historyLimit)
+    const history: HistoryItem[] = []
+
+    for (const value of parsedHistory) {
+      if (!isHistoryItem(value)) {
+        continue
+      }
+
+      history.push(value as HistoryItem)
+
+      if (history.length === historyLimit) {
+        break
+      }
+    }
+
+    return history
   } catch {
     return []
   }
 }
 
 export function saveHistory(items: HistoryItem[]) {
-  // we trim here too so callers do not have to remember the storage limit.
-  window.localStorage.setItem(storageKey, JSON.stringify(items.slice(0, historyLimit)))
+  const historyToSave: HistoryItem[] = []
+
+  for (const item of items) {
+    historyToSave.push(item)
+
+    if (historyToSave.length === historyLimit) {
+      break
+    }
+  }
+
+  window.localStorage.setItem(storageKey, JSON.stringify(historyToSave))
 }
 
 export function clearHistory() {
@@ -48,22 +94,29 @@ export function clearHistory() {
 }
 
 export function addHistoryItem(history: HistoryItem[], nextItem: HistoryItem) {
-  // if the same translation is run again, we move it to the top instead of saving a duplicate copy.
-  return [
-    nextItem,
-    ...history.filter(
-      (item) =>
-        !(
-          item.mode === nextItem.mode &&
-          item.input === nextItem.input &&
-          item.output === nextItem.output
-        ),
-    ),
-  ].slice(0, historyLimit)
+  const nextHistory: HistoryItem[] = [nextItem]
+
+  for (const item of history) {
+    const isSameItem =
+      item.mode === nextItem.mode &&
+      item.input === nextItem.input &&
+      item.output === nextItem.output
+
+    if (isSameItem) {
+      continue
+    }
+
+    nextHistory.push(item)
+
+    if (nextHistory.length === historyLimit) {
+      break
+    }
+  }
+
+  return nextHistory
 }
 
 export function formatHistoryTimestamp(timestamp: string) {
-  // using the browser locale makes the saved times feel natural on any machine.
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: 'medium',
     timeStyle: 'short',
